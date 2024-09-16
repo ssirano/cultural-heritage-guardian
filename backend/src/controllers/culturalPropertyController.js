@@ -1,5 +1,3 @@
-// src/controllers/culturalPropertyController.js
-
 const CulturalProperty = require('../models/CulturalProperty'); // CulturalProperty 모델을 불러옵니다
 const { getCulturalPropertiesList, getCulturalPropertyDetail } = require('../services/culturalPropertyService');
 const xml2js = require('xml2js');
@@ -24,54 +22,65 @@ const fetchCulturalPropertiesDirectly = async (req, res) => {
 };
 
 // MongoDB에서 CulturalProperty 데이터 가져오는 함수
+
 const getCulturalProperties = async (req, res) => {
   try {
-    const properties = await CulturalProperty.find({});
-    res.json(properties);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    const { swLat, swLng, neLat, neLng, level } = req.query;
 
-// CulturalProperty 데이터를 API로 가져오는 함수
-const fetchCulturalProperties = async (req, res) => {
-  try {
-    const { ccbaCtcd, pageUnit, pageIndex, ...otherParams } = req.query;
-    if (!ccbaCtcd) {
-      return res.status(400).json({ error: 'ccbaCtcd (시도코드) is required' });
+    if (!swLat || !swLng || !neLat || !neLng || !level) {
+      return res.status(400).json({ message: 'Missing required query parameters' });
     }
 
-    const params = {
-      ccbaCtcd,
-      pageUnit: pageUnit || 10,
-      pageIndex: pageIndex || 1,
-      ...otherParams,
+    const zoomLevel = parseInt(level);
+    if (isNaN(zoomLevel) || zoomLevel < 1 || zoomLevel > 14) {
+      return res.status(400).json({ message: 'Invalid zoom level' });
+    }
+
+    // 줌 레벨이 9 이상이면 빈 배열 반환
+    if (zoomLevel >= 9) {
+      return res.json([]);
+    }
+
+    // 좌표값 유효성 검사
+    const coords = [swLat, swLng, neLat, neLng].map(Number);
+    if (coords.some(isNaN)) {
+      return res.status(400).json({ message: 'Invalid coordinate values' });
+    }
+
+    // 줌 레벨에 따라 반환할 데이터 수 조정
+    let limit = 1000; // 기본값
+    if (zoomLevel <= 3) limit = 100;
+    else if (zoomLevel <= 5) limit = 300;
+    else if (zoomLevel <= 8) limit = 500;
+
+    // 지리적 범위 내의 문화재 쿼리
+    const query = {
+      'location.coordinates': {
+        $geoWithin: {
+          $box: [
+            [parseFloat(swLng), parseFloat(swLat)],
+            [parseFloat(neLng), parseFloat(neLat)]
+          ]
+        }
+      }
     };
 
-    const items = await getCulturalPropertiesList(params);
-    res.json(items);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    console.log('Search Query:', query);
 
-// 특정 CulturalProperty 상세 조회
-const fetchCulturalPropertyDetail = async (req, res) => {
-  try {
-    const { ccbaKdcd, ccbaAsno, ccbaCtcd } = req.query;
-    if (!ccbaKdcd || !ccbaAsno || !ccbaCtcd) {
-      return res.status(400).json({ error: 'ccbaKdcd, ccbaAsno, ccbaCtcd are required' });
-    }
+    const culturalProperties = await CulturalProperty.find(query)
+      .limit(limit)
+      .select('name location type period'); // 필요한 필드만 선택
 
-    const params = { ccbaKdcd, ccbaAsno, ccbaCtcd };
-    const item = await getCulturalPropertyDetail(params);
-    res.json(item);
+    console.log(`Returning ${culturalProperties.length} cultural properties for zoom level ${zoomLevel}`);
+    res.json(culturalProperties);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error fetching cultural properties:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 // CulturalProperty 데이터를 API로 가져와 MongoDB에 저장하는 함수
+
 const fetchAndSaveCulturalProperties = async (req, res) => {
   try {
     console.log('fetchAndSaveCulturalProperties 함수가 호출되었습니다.');
@@ -138,10 +147,63 @@ const fetchAndSaveCulturalProperties = async (req, res) => {
   }
 };
 
+// 필터링된 문화재 조회 함수
+const fetchCulturalProperties = async (req, res) => {
+  try {
+    const { swLat, swLng, neLat, neLng, level } = req.query;
+
+    if (!swLat || !swLng || !neLat || !neLng || !level) {
+      return res.status(400).json({ error: 'swLat, swLng, neLat, neLng, level are required' });
+    }
+
+    const query = {
+      'location.coordinates': {
+        $geoWithin: {
+          $box: [
+            [parseFloat(swLng), parseFloat(swLat)],
+            [parseFloat(neLng), parseFloat(neLat)]
+          ]
+        }
+      }
+    };
+
+    console.log('Filter Query:', query);
+
+    const properties = await CulturalProperty.find(query);
+    res.json(properties);
+  } catch (error) {
+    console.error('Failed to fetch filtered cultural properties:', error.message);
+    res.status(500).json({ error: 'Failed to fetch filtered cultural properties' });
+  }
+};
+
+const searchCulturalProperties = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+    console.log(`Received search request with keyword: ${keyword}`);
+
+    if (!keyword) {
+      return res.status(400).json({ message: 'Search keyword is required' });
+    }
+
+    // name, location, type, period 필드를 선택하여 검색 결과에 포함
+    const culturalProperties = await CulturalProperty.find({
+      name: { $regex: keyword, $options: 'i' }
+    }).select('name location type period');
+
+    console.log(`Found ${culturalProperties.length} cultural properties matching keyword: ${keyword}`);
+
+    res.json(culturalProperties);
+  } catch (error) {
+    console.error('Error searching cultural properties:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   fetchCulturalProperties,
-  fetchCulturalPropertyDetail,
   getCulturalProperties,
   fetchCulturalPropertiesDirectly,
   fetchAndSaveCulturalProperties, // 추가된 함수
+  searchCulturalProperties,
 };

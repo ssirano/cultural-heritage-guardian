@@ -1,14 +1,11 @@
-// src/routes/culturalPropertyRoutes.js
-
 const express = require('express');
 const router = express.Router();
-const CulturalProperty = require('../models/CulturalProperty'); // 추가된 라인
+const CulturalProperty = require('../models/CulturalProperty');
 const {
   fetchCulturalProperties,
-  fetchCulturalPropertyDetail,
   fetchCulturalPropertiesDirectly,
   getCulturalProperties,
-  fetchAndSaveCulturalProperties, // 추가된 함수
+  fetchAndSaveCulturalProperties,
   createCulturalProperty,
   readAllCulturalProperties,
   readCulturalPropertyById,
@@ -19,9 +16,10 @@ const {
 
 // 기존 엔드포인트들
 router.get('/fetch-direct', fetchCulturalPropertiesDirectly);
-router.get('/list', getCulturalProperties);
+router.get('/list', getCulturalProperties); // 이 엔드포인트를 사용
+
 router.get('/fetch-list', fetchCulturalProperties);
-router.get('/fetch-detail', fetchCulturalPropertyDetail);
+router.get('/search', searchCulturalProperties);
 
 // 새 엔드포인트: 데이터를 가져와 저장
 router.get('/fetch-and-save', fetchAndSaveCulturalProperties);
@@ -91,28 +89,27 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// SEARCH - 문화재 검색
-router.get('/search', async (req, res) => {
-  try {
-    const { keyword, type, period } = req.query;
-    const query = {};
+// // SEARCH - 문화재 검색
+// router.get('/search', async (req, res) => {
+//   try {
+//     const { keyword, type, period } = req.query;
+//     const query = {};
 
-    if (keyword) {
-      query.name = { $regex: keyword, $options: 'i' };
-    }
-    if (type) {
-      query.type = type;
-    }
-    if (period) {
-      query.period = period;
-    }
+//     if (keyword) {
+//       query.name = { $regex: keyword, $options: 'i' };
+//     }
+//     if (type) {
+//       query.type = type;
+//     }
+//     if (period) {
+//       query.period = period;
+//     }
 
-    const culturalProperties = await CulturalProperty.find(query);
-    res.json(culturalProperties);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+//     const culturalProperties = await CulturalProperty.find(query);
+//     res.json(culturalProperties);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
 module.exports = router;
-

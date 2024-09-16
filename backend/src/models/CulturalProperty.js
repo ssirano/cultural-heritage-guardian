@@ -1,25 +1,29 @@
-// src/models/CulturalProperty.js
-
 const mongoose = require('mongoose');
 
-// CulturalProperty 스키마 정의
 const CulturalPropertySchema = new mongoose.Schema({
   name: { type: String, required: true },
-  type: String,
-  period: String,
+  type: { type: String },
+  period: { type: String },
   location: {
-    type: { type: String, default: 'Point' },
-    coordinates: [Number], // 경도(longitude), 위도(latitude)
+    type: {
+      type: String,
+      enum: ['Point'],
+      required: true,
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
+    },
   },
-  description: String,
-  imageUrl: String,
-  ccbaKdcd: String,  // 종목코드
-  ccbaAsno: String,  // 관리번호
-  ccbaCtcd: String,  // 시도코드
-  ccbaCpno: String,  // 국가유산연계번호
+  description: { type: String },
+  imageUrl: { type: String },
+  ccbaKdcd: { type: String },
+  ccbaAsno: { type: String },
+  ccbaCtcd: { type: String },
+  ccbaCpno: { type: String, unique: true },
 });
 
-// 위치 정보를 위한 2D Sphere 인덱스 추가
+// 지리적 인덱스 설정
 CulturalPropertySchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('CulturalProperty', CulturalPropertySchema);
