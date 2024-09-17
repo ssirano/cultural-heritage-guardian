@@ -110,3 +110,6 @@ exports.login = async (req, res) => {
       res.status(500).json({ error: '프로필 조회 실패' });
     }
   };
+  exports.verifyToken = (req, res) => {
+    res.json({ valid: true, user: req.user });
+  };

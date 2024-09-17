@@ -74,11 +74,16 @@
 │   │   ├── App.test.js
 │   │   ├── charts
 │   │   ├── components
+│   │   │   ├── Chat.js
+│   │   │   ├── ChatButton.js
+│   │   │   ├── ChatModal.js
 │   │   │   ├── CulturalPropertyList.js
 │   │   │   ├── CulturalPropertyMap.js
 │   │   │   ├── ErrorBoundary.js
-│   │   │   └── Login
-│   │   │       └── LoginForm.js
+│   │   │   ├── Login
+│   │   │   │   └── LoginForm.js
+│   │   │   ├── Login.js
+│   │   │   └── Register.js
 │   │   ├── index.css
 │   │   ├── index.js
 │   │   ├── logo.svg
@@ -90,10 +95,11 @@
 │   │   ├── services
 │   │   ├── setupTests.js
 │   │   ├── styles
+│   │   │   └── Auth.css
 │   │   ├── utils
 │   │   └── websocket
 │   └── tests
 ├── package-lock.json
 └── package.json
 
-38 directories, 59 files
+38 directories, 65 files
