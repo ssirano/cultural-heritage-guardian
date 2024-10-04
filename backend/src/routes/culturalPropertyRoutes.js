@@ -89,27 +89,27 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// // SEARCH - 문화재 검색
-// router.get('/search', async (req, res) => {
-//   try {
-//     const { keyword, type, period } = req.query;
-//     const query = {};
+// SEARCH - 문화재 검색
+router.get('/search', async (req, res) => {
+  try {
+    const { keyword, type, period } = req.query;
+    const query = {};
 
-//     if (keyword) {
-//       query.name = { $regex: keyword, $options: 'i' };
-//     }
-//     if (type) {
-//       query.type = type;
-//     }
-//     if (period) {
-//       query.period = period;
-//     }
+    if (keyword) {
+      query.name = { $regex: keyword, $options: 'i' };
+    }
+    if (type) {
+      query.type = type;
+    }
+    if (period) {
+      query.period = period;
+    }
 
-//     const culturalProperties = await CulturalProperty.find(query);
-//     res.json(culturalProperties);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
+    const culturalProperties = await CulturalProperty.find(query);
+    res.json(culturalProperties);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;
